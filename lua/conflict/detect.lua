@@ -58,14 +58,17 @@ M.highlight = function(conflicts)
 		},
 	}
 
-	-- Mark a single line: background colour + optional EOL label.
-	local function mark(line_0, line_hl, label)
-		local opts = { line_hl_group = line_hl }
-		if label then
-			opts.virt_text     = { { label, line_hl } }
-			opts.virt_text_pos = "eol"
-		end
-		vim.api.nvim_buf_set_extmark(0, ns, line_0, 0, opts)
+	-- Highlight an entire line with a background colour.
+	local function mark(line_0, line_hl)
+		vim.api.nvim_buf_set_extmark(0, ns, line_0, 0, { line_hl_group = line_hl })
+	end
+
+	-- Virtual-text label only — no line background.
+	local function virt_label(line_0, hl_group, text)
+		vim.api.nvim_buf_set_extmark(0, ns, line_0, 0, {
+			virt_text     = { { text, hl_group } },
+			virt_text_pos = "eol",
+		})
 	end
 
 	for _, c in ipairs(conflicts) do
@@ -73,10 +76,9 @@ M.highlight = function(conflicts)
 			goto continue
 		end
 
-		-- Action bar floats above <<<<<<< (mimics VSCode codelens)
+		-- Action bar floats above <<<<<<< — no line background on the marker itself.
 		vim.api.nvim_buf_set_extmark(0, ns, c.start - 1, 0, {
-			line_hl_group    = hl.current_label,
-			virt_text        = { { "  ◀ Current Change ", hl.current_label } },
+			virt_text        = { { "  ◀ Current Change ", hl.current_text } },
 			virt_text_pos    = "eol",
 			virt_lines       = action_bar,
 			virt_lines_above = true,
@@ -85,33 +87,34 @@ M.highlight = function(conflicts)
 			mark(line, hl.current)
 		end
 
-		-- ||||||| ancestor (diff3 only)
+		-- ||||||| ancestor (diff3 only) — label only, no line background.
 		if c.base then
-			mark(c.base - 1, hl.base_label, "  ◀ Base ")
+			virt_label(c.base - 1, hl.base_text, "  ◀ Base ")
 			for line = c.base, c.middle - 2 do
 				mark(line, hl.base)
 			end
 		end
-
-		-- ======= separator
-		mark(c.middle - 1, hl.incoming_label)
 
 		-- Incoming content
 		for line = c.middle, c["end"] - 2 do
 			mark(line, hl.incoming)
 		end
 
-		-- >>>>>>> branch
-		mark(c["end"] - 1, hl.incoming_label, "  ▶ Incoming Change ")
+		-- >>>>>>> branch — label only, no line background.
+		virt_label(c["end"] - 1, hl.incoming_text, "  ▶ Incoming Change ")
 
 		::continue::
 	end
 end
 
 M.detect_and_highlight = function()
+	local bufnr = vim.api.nvim_get_current_buf()
 	local conflicts = M.detect_conflicts()
 	if #conflicts > 0 then
 		M.highlight(conflicts)
+		vim.diagnostic.disable(bufnr)
+	else
+		vim.diagnostic.enable(bufnr)
 	end
 end
 
