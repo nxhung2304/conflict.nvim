@@ -112,9 +112,11 @@ M.detect_and_highlight = function()
 	local conflicts = M.detect_conflicts()
 	if #conflicts > 0 then
 		M.highlight(conflicts)
-		vim.diagnostic.disable(bufnr)
+		vim.diagnostic.enable(false, { bufnr = bufnr })
+		pcall(vim.treesitter.stop, bufnr)
 	else
-		vim.diagnostic.enable(bufnr)
+		vim.diagnostic.enable(true, { bufnr = bufnr })
+		pcall(vim.treesitter.start, bufnr)
 	end
 end
 
