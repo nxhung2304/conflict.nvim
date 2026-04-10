@@ -60,11 +60,12 @@ end
 
 M.accept_none = function()
 	local c = get_conflict_at_cursor()
-	if not c then
+	if not c or not c.middle then
+		vim.notify("No conflict found at cursor", vim.log.levels.WARN)
 		return
 	end
 	vim.api.nvim_buf_set_lines(0, c.start - 1, c["end"], false, {})
-	print("✅ Accepted None")
+	vim.notify("Accepted None", vim.log.levels.INFO)
 end
 
 -- Per-pane styling config for the diff views.

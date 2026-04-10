@@ -29,7 +29,8 @@ M.detect_conflicts = function()
 				end
 				i = i + 1
 			end
-			if conflict["end"] then
+			-- Require both middle and end — skip malformed conflicts.
+			if conflict["end"] and conflict.middle then
 				table.insert(conflicts, conflict)
 			end
 		end
