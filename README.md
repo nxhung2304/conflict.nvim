@@ -1,6 +1,6 @@
 # conflict.nvim
 
-Fast, smart Git conflict resolver for Neovim. Like `git-conflict.nvim` but **works anywhere** (not just git merge), with project-wide listing and user events.
+Fast, smart Git conflict resolver for Neovim
 
 ## Features
 
@@ -11,6 +11,22 @@ Fast, smart Git conflict resolver for Neovim. Like `git-conflict.nvim` but **wor
 - **2-way/3-way diffs** — with diffview.nvim integration
 - **Mouse-clickable actions** — optional action bar on markers
 - **LSP auto-disabled** — suppressed during merge, re-enabled after
+
+
+## Demo
+
+### Markers like VSCode
+<img src="./images/have-markers.png" >
+
+### No markers
+<img src="./images/no-markers.png" >
+
+### 2-way
+<img src="./images/2-way.png" >
+
+### 3-way
+<img src="./images/3-way.png" >
+
 
 ## Install
 
