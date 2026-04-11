@@ -11,7 +11,6 @@ Fast, smart Git conflict resolver for Neovim. Like `git-conflict.nvim` but **wor
 - **2-way/3-way diffs** — with diffview.nvim integration
 - **Mouse-clickable actions** — optional action bar on markers
 - **LSP auto-disabled** — suppressed during merge, re-enabled after
-- **AI suggestions** — via Avante.nvim (`<leader>cs`)
 
 ## Install
 
@@ -24,7 +23,7 @@ Fast, smart Git conflict resolver for Neovim. Like `git-conflict.nvim` but **wor
 }
 ```
 
-Optional: `diffview.nvim`, `avante.nvim`
+Optional: `diffview.nvim`
 
 ## Config
 
@@ -38,7 +37,6 @@ require("conflict").setup({
     incoming = "#40A6FF",
     base     = "#FFCC66",
   },
-  ai = { enabled = true, provider = "avante" },
 })
 ```
 
@@ -54,7 +52,6 @@ require("conflict").setup({
 | `<leader>cp` | Previous conflict |
 | `<leader>c2` | 2-way diff |
 | `<leader>c3` | 3-way diff |
-| `<leader>cs` | AI suggest |
 | `<leader>cl` | List conflicts |
 
 ## Commands
@@ -73,12 +70,3 @@ vim.api.nvim_create_autocmd("User", {
   callback = function(data) print("Conflict in buffer " .. data.bufnr) end,
 })
 ```
-
-## Why over git-conflict.nvim?
-
-- ✅ Works on any file with markers (not just git merge)
-- ✅ Project-wide conflict listing
-- ✅ User events for automation
-- ✅ Better color blending
-- ✅ Mouse support
-- ✅ 2-way/3-way diffs

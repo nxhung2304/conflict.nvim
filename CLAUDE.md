@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-`conflict.nvim` is a Neovim plugin for resolving Git merge conflicts, styled after VSCode's conflict UI. It provides automatic highlighting, VSCode-style action bars, 2-way/3-way diff views, and AI-assisted merge suggestions (via Avante.nvim).
+`conflict.nvim` is a Neovim plugin for resolving Git merge conflicts, styled after VSCode's conflict UI. It provides automatic highlighting, VSCode-style action bars, and 2-way/3-way diff views.
 
 ## Development Commands
 
@@ -28,7 +28,7 @@ lua/conflict/
 ├── config.lua   -- Options merging, highlight group definitions, hex color blending algorithm
 ├── detect.lua   -- Buffer scanning for conflict markers, extmark-based highlighting, navigation
 ├── resolve.lua  -- Resolution actions (accept/reject), 2-way/3-way scratch diff views
-└── ai.lua       -- AI suggestion via Avante.nvim provider
+└── list.lua     -- Project-wide conflict listing
 ```
 
 ### Data Flow
@@ -69,9 +69,9 @@ lua/conflict/
 | `p` | Previous conflict |
 | `2` | Open 2-way diff tab |
 | `3` | Open 3-way diff tab |
-| `s` | AI suggest merge |
+| `l` | List all conflicts |
 
 ## Dependencies
 
 - **Required**: none (core features are self-contained)
-- **Optional**: `tpope/vim-fugitive`, `yetone/avante.nvim` (for AI), `sindrets/diffview.nvim`
+- **Optional**: `tpope/vim-fugitive`, `sindrets/diffview.nvim`

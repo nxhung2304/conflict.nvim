@@ -13,7 +13,6 @@ M.setup = function(opts)
   local config  = require("conflict.config")
   local detect  = require("conflict.detect")
   local resolve = require("conflict.resolve")
-  local ai      = require("conflict.ai")
   local list    = require("conflict.list")
 
   config.setup(opts or {})
@@ -43,7 +42,6 @@ M.setup = function(opts)
   map(leader .. "cp", detect.prev_conflict,    "Previous Conflict")
   map(leader .. "c2", resolve.open_2way,       "Open 2-way diff")
   map(leader .. "c3", resolve.open_3way,       "Open 3-way diff")
-  map(leader .. "cs", ai.suggest_merge,        "AI Suggest Merge")
   map(leader .. "cl", list.list_conflicts,     "List all conflicts")
 
   -- Mouse click handler for action bar

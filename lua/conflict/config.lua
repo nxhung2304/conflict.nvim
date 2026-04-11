@@ -33,10 +33,6 @@ M.defaults = {
 		both     = "#88CC44",  -- green  — "accept both" action
 		none     = "#808080",  -- gray   — "accept none" action
 	},
-	ai = {
-		enabled  = true,
-		provider = "avante",
-	},
 }
 
 M.options = {}
