@@ -2,6 +2,37 @@ local M = {}
 
 local _setup_done = false
 
+-- Detect conflicts in a specific buffer (used by statusline API)
+local function detect_conflicts_in_buffer(bufnr)
+	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+	local conflicts = {}
+	local i = 1
+
+	while i <= #lines do
+		if lines[i]:match("^<<<<<<<") then
+			local conflict = { start = i }
+			i = i + 1
+			while i <= #lines do
+				if lines[i]:match("^|||||||") then
+					conflict.base = i
+				elseif lines[i]:match("^=======") then
+					conflict.middle = i
+				elseif lines[i]:match("^>>>>>>>") then
+					conflict["end"] = i
+					break
+				end
+				i = i + 1
+			end
+			-- Require both middle and end — skip malformed conflicts.
+			if conflict["end"] and conflict.middle then
+				table.insert(conflicts, conflict)
+			end
+		end
+		i = i + 1
+	end
+	return conflicts
+end
+
 M.setup = function(opts)
   -- Guard against calling setup() more than once.
   if _setup_done then
@@ -66,6 +97,16 @@ M.setup = function(opts)
     end,
     desc = "Conflict management command",
   })
+end
+
+-- Public API for statusline integration
+-- Returns the number of conflicts in a given buffer
+-- Usage: require("conflict").get_conflict_count(vim.api.nvim_get_current_buf())
+M.get_conflict_count = function(bufnr)
+	if not bufnr or bufnr == 0 then
+		bufnr = vim.api.nvim_get_current_buf()
+	end
+	return #detect_conflicts_in_buffer(bufnr)
 end
 
 return M

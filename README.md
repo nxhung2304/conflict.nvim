@@ -86,3 +86,9 @@ vim.api.nvim_create_autocmd("User", {
   callback = function(data) print("Conflict in buffer " .. data.bufnr) end,
 })
 ```
+
+## Statusline Integration
+
+```lua
+-- Get conflict count in current buffer
+require("conflict").get_conflict_count()
