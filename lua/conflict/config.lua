@@ -10,6 +10,13 @@ M.defaults = {
 		-- false: hide action buttons, use keyboard shortcuts only
 		markers = false,
 	},
+	detect = {
+		-- When true (default): detect conflicts in ANY file with <<<<<<< markers,
+		-- regardless of git merge state. Works with AI-generated, manually pasted,
+		-- or stash-pop conflict markers.
+		-- When false: only activate during git merge/rebase/cherry-pick state.
+		anywhere = true,
+	},
 	highlights = {
 		current      = "ConflictCurrent",
 		current_text = "ConflictCurrentText",

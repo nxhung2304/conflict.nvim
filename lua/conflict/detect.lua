@@ -45,9 +45,6 @@ M.highlight = function(conflicts)
 
 	local hl = config.options.highlights
 
-	-- Debug: show current config
-	vim.notify(string.format("Conflict UI markers enabled: %s", tostring(config.options.ui.markers)), vim.log.levels.INFO)
-
 	-- Highlight an entire line with a background colour.
 	local function mark(line_0, line_hl)
 		vim.api.nvim_buf_set_extmark(0, ns, line_0, 0, { line_hl_group = line_hl })
@@ -112,6 +109,16 @@ end
 
 M.detect_and_highlight = function()
 	local bufnr = vim.api.nvim_get_current_buf()
+
+	-- When anywhere = false, skip detection unless inside a git operation.
+	if not config.options.detect.anywhere then
+		if not M.is_git_merge_state() then
+			vim.diagnostic.enable(true, { bufnr = bufnr })
+			pcall(vim.treesitter.start, bufnr)
+			return
+		end
+	end
+
 	local conflicts = M.detect_conflicts()
 	if #conflicts > 0 then
 		M.highlight(conflicts)
@@ -180,6 +187,16 @@ M.prev_conflict = function()
 		end
 	end
 	print("No previous conflicts")
+end
+
+-- Returns true if the current directory is inside an active git merge/rebase/cherry-pick.
+M.is_git_merge_state = function()
+	local gitdir = vim.fn.system("git rev-parse --git-dir 2>/dev/null"):gsub("\n", "")
+	if vim.v.shell_error ~= 0 or gitdir == "" then return false end
+	return vim.fn.filereadable(gitdir .. "/MERGE_HEAD") == 1
+		or vim.fn.filereadable(gitdir .. "/CHERRY_PICK_HEAD") == 1
+		or vim.fn.isdirectory(gitdir .. "/rebase-merge") == 1
+		or vim.fn.isdirectory(gitdir .. "/rebase-apply") == 1
 end
 
 -- Helper: determine action based on click position within text area

@@ -48,6 +48,26 @@ M.setup = function(opts)
 
   -- Mouse click handler for action bar
   vim.keymap.set("n", "<LeftMouse>", detect.on_mouse, { silent = true })
+
+  -- Main user command: :Conflict <action>
+  vim.api.nvim_create_user_command("Conflict", function(opts)
+    local action = opts.args:lower()
+    if action == "list" then
+      list.list_conflicts()
+    elseif action == "next" then
+      detect.next_conflict()
+    elseif action == "prev" then
+      detect.prev_conflict()
+    else
+      vim.notify("Unknown Conflict action: " .. action .. ". Use: list, next, prev", vim.log.levels.WARN)
+    end
+  end, {
+    nargs = 1,
+    complete = function()
+      return { "list", "next", "prev" }
+    end,
+    desc = "Conflict management command",
+  })
 end
 
 return M

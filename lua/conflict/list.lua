@@ -1,5 +1,6 @@
 local M = {}
 
+local config = require("conflict.config")
 local detect = require("conflict.detect")
 
 -- Count conflicts in a buffer or file
@@ -32,9 +33,23 @@ local function count_conflicts_in_file(filepath)
 	return count
 end
 
--- Get conflict files from git status
+-- Get conflict files from git status (only unmerged files)
 local function get_git_conflict_files()
 	local result = vim.fn.system("git diff --name-only --diff-filter=U 2>/dev/null")
+	if vim.v.shell_error ~= 0 or result == "" then
+		return {}
+	end
+	local files = {}
+	for filepath in result:gmatch("[^\n]+") do
+		table.insert(files, filepath)
+	end
+	return files
+end
+
+-- When detect.anywhere = true, use git grep to find ALL tracked files
+-- with conflict markers (not just files in unmerged state).
+local function scan_git_tracked_files()
+	local result = vim.fn.system("git grep --name-only '^<<<<<<<' 2>/dev/null")
 	if vim.v.shell_error ~= 0 or result == "" then
 		return {}
 	end
@@ -48,7 +63,9 @@ end
 -- Build list of all conflicts in the project
 local function collect_all_conflicts()
 	local conflicts_by_file = {}
-	local git_files = get_git_conflict_files()
+	local git_files = config.options.detect.anywhere
+		and scan_git_tracked_files()
+		or get_git_conflict_files()
 
 	-- Scan git conflict files
 	for _, filepath in ipairs(git_files) do
