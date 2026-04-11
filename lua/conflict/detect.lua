@@ -45,18 +45,8 @@ M.highlight = function(conflicts)
 
 	local hl = config.options.highlights
 
-	-- The VSCode-style action bar shown above each conflict block.
-	local action_bar = {
-		{
-			{ " ✔ Accept Current Change ",  "ConflictActionCurrent"  },
-			{ " │ ", "ConflictActionSep" },
-			{ " ✔ Accept Incoming Change ", "ConflictActionIncoming" },
-			{ " │ ", "ConflictActionSep" },
-			{ " ✔ Accept Both Changes ",    "ConflictActionBoth"     },
-			{ " │ ", "ConflictActionSep" },
-			{ " ✘ Accept None ",            "ConflictActionNone"     },
-		},
-	}
+	-- Debug: show current config
+	vim.notify(string.format("Conflict UI markers enabled: %s", tostring(config.options.ui.markers)), vim.log.levels.INFO)
 
 	-- Highlight an entire line with a background colour.
 	local function mark(line_0, line_hl)
@@ -76,13 +66,26 @@ M.highlight = function(conflicts)
 			goto continue
 		end
 
-		-- Action bar floats above <<<<<<< — no line background on the marker itself.
-		vim.api.nvim_buf_set_extmark(0, ns, c.start - 1, 0, {
-			virt_text        = { { "  ◀ Current Change ", hl.current_text } },
-			virt_text_pos    = "eol",
-			virt_lines       = action_bar,
-			virt_lines_above = true,
-		})
+		-- Action bar with label on the marker line (if enabled in config)
+		if config.options.ui.markers then
+			vim.api.nvim_buf_set_extmark(0, ns, c.start - 1, 0, {
+				virt_text = {
+					{ "  " },
+					{ "✔ Current", "ConflictActionCurrent" },
+					{ " │ ", "ConflictActionSep" },
+					{ "✔ Incoming", "ConflictActionIncoming" },
+					{ " │ ", "ConflictActionSep" },
+					{ "✔ Both", "ConflictActionBoth" },
+					{ " │ ", "ConflictActionSep" },
+					{ "✘ None", "ConflictActionNone" },
+					{ "  ◀ Current", hl.current_text },
+				},
+				virt_text_pos = "eol",
+			})
+		else
+			-- If markers disabled, still show label without action buttons
+			virt_label(c.start - 1, hl.current_text, "  ◀ Current")
+		end
 		for line = c.start, (c.base or c.middle) - 2 do
 			mark(line, hl.current)
 		end
@@ -114,9 +117,44 @@ M.detect_and_highlight = function()
 		M.highlight(conflicts)
 		vim.diagnostic.enable(false, { bufnr = bufnr })
 		pcall(vim.treesitter.stop, bufnr)
+
+		-- Disable git blame to make mouse detection reliable
+		pcall(function()
+			local gitsigns = require("gitsigns")
+			-- Try to disable blame line by getting the show_blame status
+			if vim.b[bufnr].gitsigns_blame_line then
+				vim.b[bufnr]._conflict_blame_was_on = true
+				gitsigns.toggle_lineblame()
+			else
+				vim.b[bufnr]._conflict_blame_was_on = false
+			end
+			-- Also try to disable via config
+			local ok, config = pcall(require, "gitsigns.config")
+			if ok and config.config then
+				vim.b[bufnr]._conflict_gitsigns_config = vim.b[bufnr]._conflict_gitsigns_config or {}
+				vim.b[bufnr]._conflict_gitsigns_config.blame_line = false
+			end
+		end)
+
+		-- Emit ConflictDetected event
+		vim.api.nvim_exec_autocmds("User", {
+			pattern = "ConflictDetected",
+			data = { bufnr = bufnr, count = #conflicts },
+		})
 	else
 		vim.diagnostic.enable(true, { bufnr = bufnr })
 		pcall(vim.treesitter.start, bufnr)
+
+		-- Re-enable git blame if it was on before
+		if vim.b[bufnr]._conflict_blame_was_on then
+			pcall(function()
+				local gitsigns = require("gitsigns")
+				if gitsigns.toggle_lineblame then
+					gitsigns.toggle_lineblame()
+				end
+			end)
+		end
+		vim.b[bufnr]._conflict_blame_was_on = nil
 	end
 end
 
@@ -142,6 +180,77 @@ M.prev_conflict = function()
 		end
 	end
 	print("No previous conflicts")
+end
+
+-- Helper: determine action based on click position within text area
+-- Maps relative position to action button
+local function get_clicked_action_by_distance(click_col, marker_width)
+	local rel_pos = click_col - marker_width
+
+	-- Empirically calibrated ranges based on button positions on the action bars
+	if rel_pos < 30 then
+		return "current"       -- First button area
+	elseif rel_pos < 42 then
+		return "incoming"      -- Second button area
+	elseif rel_pos < 52 then
+		return "both"          -- Third button area
+	else
+		return "none"          -- Fourth button area
+	end
+end
+
+-- Handle mouse clicks on the action bar (only if markers enabled)
+M.on_mouse = function()
+	-- Only process clicks if markers are enabled
+	if not config.options.ui.markers then
+		return
+	end
+
+	local mpos = vim.fn.getmousepos()
+	if mpos.winid <= 0 then
+		return
+	end
+
+	-- Move cursor to clicked position first (standard mouse behavior)
+	vim.api.nvim_set_current_win(mpos.winid)
+	vim.api.nvim_win_set_cursor(mpos.winid, { mpos.line, mpos.column - 1 })
+
+	-- Check if clicked on conflict start marker line
+	local conflicts = M.detect_conflicts()
+	for _, c in ipairs(conflicts) do
+		if mpos.line == c.start then
+			-- Get gutter width
+			local wininfo = vim.fn.getwininfo(mpos.winid)[1]
+			local gutter_width = wininfo.textoff
+			local text_col = mpos.wincol - gutter_width
+
+			-- Get the marker line to calculate where virt_text starts
+			local lines = vim.api.nvim_buf_get_lines(0, c.start - 1, c.start, false)
+
+			if #lines > 0 then
+				local marker_line = lines[1]
+				local marker_width = vim.fn.strdisplaywidth(marker_line)
+
+				-- Determine action from click position
+				local action = get_clicked_action_by_distance(text_col, marker_width)
+
+				if action then
+					local resolve = require("conflict.resolve")
+					if action == "current" then
+						resolve.accept_current()
+					elseif action == "incoming" then
+						resolve.accept_incoming()
+					elseif action == "both" then
+						resolve.accept_both()
+					elseif action == "none" then
+						resolve.accept_none()
+					end
+					return
+				end
+			end
+			return
+		end
+	end
 end
 
 return M

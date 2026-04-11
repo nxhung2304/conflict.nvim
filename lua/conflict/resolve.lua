@@ -27,6 +27,13 @@ M.accept_current = function()
 		vim.api.nvim_buf_get_lines(0, c.start, current_end_0, false)
 	)
 	vim.notify("Accepted Current (Ours)", vim.log.levels.INFO)
+	-- Emit ConflictResolved event
+	vim.api.nvim_exec_autocmds("User", {
+		pattern = "ConflictResolved",
+		data = { bufnr = vim.api.nvim_get_current_buf(), method = "current" },
+	})
+	-- Refresh highlights
+	require("conflict.detect").detect_and_highlight()
 end
 
 M.accept_incoming = function()
@@ -43,6 +50,13 @@ M.accept_incoming = function()
 		vim.api.nvim_buf_get_lines(0, c.middle, c["end"] - 1, false)
 	)
 	vim.notify("Accepted Incoming (Theirs)", vim.log.levels.INFO)
+	-- Emit ConflictResolved event
+	vim.api.nvim_exec_autocmds("User", {
+		pattern = "ConflictResolved",
+		data = { bufnr = vim.api.nvim_get_current_buf(), method = "incoming" },
+	})
+	-- Refresh highlights
+	require("conflict.detect").detect_and_highlight()
 end
 
 M.accept_both = function()
@@ -56,6 +70,13 @@ M.accept_both = function()
 	local incoming = vim.api.nvim_buf_get_lines(0, c.middle, c["end"] - 1, false)
 	vim.api.nvim_buf_set_lines(0, c.start - 1, c["end"], false, vim.list_extend(current, incoming))
 	vim.notify("Accepted Both", vim.log.levels.INFO)
+	-- Emit ConflictResolved event
+	vim.api.nvim_exec_autocmds("User", {
+		pattern = "ConflictResolved",
+		data = { bufnr = vim.api.nvim_get_current_buf(), method = "both" },
+	})
+	-- Refresh highlights
+	require("conflict.detect").detect_and_highlight()
 end
 
 M.accept_none = function()
@@ -66,6 +87,13 @@ M.accept_none = function()
 	end
 	vim.api.nvim_buf_set_lines(0, c.start - 1, c["end"], false, {})
 	vim.notify("Accepted None", vim.log.levels.INFO)
+	-- Emit ConflictResolved event
+	vim.api.nvim_exec_autocmds("User", {
+		pattern = "ConflictResolved",
+		data = { bufnr = vim.api.nvim_get_current_buf(), method = "none" },
+	})
+	-- Refresh highlights
+	require("conflict.detect").detect_and_highlight()
 end
 
 -- Per-pane styling config for the diff views.
@@ -127,7 +155,7 @@ local function open_pane(lines, label, filetype, side)
 	vim.cmd("diffthis")
 end
 
--- Opens OURS vs THEIRS side-by-side in a new tab using Neovim's built-in diff.
+-- Opens OURS vs THEIRS side-by-side. Uses diffview.nvim if available, else Neovim's built-in diff.
 M.open_2way = function()
 	local c = get_conflict_at_cursor()
 	if not c or not c.middle then
@@ -135,6 +163,15 @@ M.open_2way = function()
 		return
 	end
 
+	-- Try to use diffview.nvim if available
+	local ok, diffview = pcall(require, "diffview")
+	if ok and diffview.open then
+		-- diffview.nvim is installed; use it
+		vim.cmd("DiffviewOpen")
+		return
+	end
+
+	-- Fall back to built-in diff with scratch panes
 	local ft = vim.bo.filetype
 	local current_end_0 = c.base and (c.base - 1) or (c.middle - 1)
 	local ours   = vim.api.nvim_buf_get_lines(0, c.start,  current_end_0,  false)
@@ -147,6 +184,7 @@ M.open_2way = function()
 end
 
 -- Opens OURS | BASE | THEIRS in a new tab (BASE pane only shown for diff3 conflicts).
+-- Uses diffview.nvim if available, else Neovim's built-in diff.
 M.open_3way = function()
 	local c = get_conflict_at_cursor()
 	if not c or not c.middle then
@@ -154,6 +192,15 @@ M.open_3way = function()
 		return
 	end
 
+	-- Try to use diffview.nvim if available
+	local ok, diffview = pcall(require, "diffview")
+	if ok and diffview.open then
+		-- diffview.nvim is installed; use it
+		vim.cmd("DiffviewOpen")
+		return
+	end
+
+	-- Fall back to built-in diff with scratch panes
 	local ft = vim.bo.filetype
 	local current_end_0 = c.base and (c.base - 1) or (c.middle - 1)
 	local ours   = vim.api.nvim_buf_get_lines(0, c.start,  current_end_0, false)

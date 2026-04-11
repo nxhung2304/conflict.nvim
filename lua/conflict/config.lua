@@ -4,6 +4,12 @@ M.defaults = {
 	keymaps = {
 		leader = "<leader>",
 	},
+	ui = {
+		-- Enable/disable action bar markers (buttons on conflict markers)
+		-- true: show clickable action buttons on conflict markers
+		-- false: hide action buttons, use keyboard shortcuts only
+		markers = false,
+	},
 	highlights = {
 		current      = "ConflictCurrent",
 		current_text = "ConflictCurrentText",
