@@ -107,14 +107,38 @@ M.highlight = function(conflicts)
 	end
 end
 
+local function snapshot_buffer_state(bufnr)
+	if vim.b[bufnr]._conflict_diagnostic_was_enabled == nil then
+		vim.b[bufnr]._conflict_diagnostic_was_enabled = vim.diagnostic.is_enabled({ bufnr = bufnr })
+	end
+	if vim.b[bufnr]._conflict_treesitter_was_active == nil then
+		vim.b[bufnr]._conflict_treesitter_was_active = vim.treesitter.highlighter.active[bufnr] ~= nil
+	end
+end
+
+local function restore_buffer_state(bufnr)
+	local was_diagnostics_enabled = vim.b[bufnr]._conflict_diagnostic_was_enabled
+	local was_treesitter_active = vim.b[bufnr]._conflict_treesitter_was_active
+	if was_diagnostics_enabled == nil and was_treesitter_active == nil then
+		return
+	end
+
+	vim.diagnostic.enable(was_diagnostics_enabled, { bufnr = bufnr })
+	if was_treesitter_active then
+		pcall(vim.treesitter.start, bufnr)
+	end
+
+	vim.b[bufnr]._conflict_diagnostic_was_enabled = nil
+	vim.b[bufnr]._conflict_treesitter_was_active = nil
+end
+
 M.detect_and_highlight = function()
 	local bufnr = vim.api.nvim_get_current_buf()
 
 	-- When anywhere = false, skip detection unless inside a git operation.
 	if not config.options.detect.anywhere then
 		if not M.is_git_merge_state() then
-			vim.diagnostic.enable(true, { bufnr = bufnr })
-			pcall(vim.treesitter.start, bufnr)
+			restore_buffer_state(bufnr)
 			return
 		end
 	end
@@ -122,6 +146,7 @@ M.detect_and_highlight = function()
 	local conflicts = M.detect_conflicts()
 	if #conflicts > 0 then
 		M.highlight(conflicts)
+		snapshot_buffer_state(bufnr)
 		vim.diagnostic.enable(false, { bufnr = bufnr })
 		pcall(vim.treesitter.stop, bufnr)
 
@@ -149,8 +174,7 @@ M.detect_and_highlight = function()
 			data = { bufnr = bufnr, count = #conflicts },
 		})
 	else
-		vim.diagnostic.enable(true, { bufnr = bufnr })
-		pcall(vim.treesitter.start, bufnr)
+		restore_buffer_state(bufnr)
 
 		-- Re-enable git blame if it was on before
 		if vim.b[bufnr]._conflict_blame_was_on then
