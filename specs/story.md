@@ -6,14 +6,25 @@ Both reviewers agree: the plugin is a solid re-implementation but lacks a **diff
 
 ---
 
+## Phase 0 — Stability (v0.1.x)
+
+**Goal:** Harden the core before adding more features. Source: `specs/feedback/chatgpt.md` P0 items.
+
+- [x] **diff3 parser correctness** — `detect_conflicts()` distinguishes `|||||||` base section from `<<<<<<<`/`=======`/`>>>>>>>` (`detect.lua` captures `conflict.base` and renders a separate "Base" highlight)
+- [x] **Multi-buffer state isolation** — conflict/LSP-suppression state is stored per-buffer via `vim.b[bufnr]` (`snapshot_buffer_state`/`restore_buffer_state`), not global
+- [x] **LSP/TreeSitter lifecycle correctness** — diagnostics and TreeSitter are snapshotted and restored per buffer (`restore_buffer_state` in `detect.lua`)
+- [ ] **Edge-case test coverage** — conflict at EOF/first line, empty ours/theirs/both, nested/adjacent conflicts, CRLF, Unicode, buffer unload/rename, resolve last vs. one-of-many (only `init_spec.lua` and `list_spec.lua` exist today)
+
+---
+
 ## Phase 1 — UX Foundation (v0.2)
 
 **Goal:** Close the gap with existing plugins, stop losing users on basics.
 
-- **Quickfix/Telescope integration** — `<leader>cl` to list all conflicting files project-wide with conflict counts, jump to line
-- **Event system** — emit autocmd events (`ConflictDetected`, `ConflictResolved`) for composability
-- **Mouse-clickable action bar** — make the virtual text `[Accept Ours] [Accept Theirs] [Accept Both]` respond to mouse clicks (not just keymaps)
-- **Lazy dependencies** — core features (highlight, navigate, accept) must work with zero deps; diff views only load `diffview.nvim` on demand
+- [x] **Quickfix/Telescope integration** — `<leader>cl` lists all conflicting files project-wide (`list.lua`)
+- [x] **Event system** — emits `ConflictDetected`/`ConflictResolved` autocmd events (`detect.lua`, `resolve.lua`)
+- [x] **Mouse-clickable action bar** — `<LeftMouse>` mapped to `detect.on_mouse` for clicking action buttons
+- [x] **Lazy dependencies** — core features work with zero deps; diff views `pcall(require, "diffview")` and fall back to built-in diff
 
 ---
 
@@ -21,9 +32,7 @@ Both reviewers agree: the plugin is a solid re-implementation but lacks a **diff
 
 **Goal:** Capture the niche `git-conflict.nvim` misses.
 
-- **Detect conflicts outside Git merge state** — work on any file with `<<<<<<<` markers (AI-generated conflicts, manually pasted code, stash pop artifacts)
-- `detect_conflict_anywhere = true` config option
-- Directly addresses the Reddit community complaint: "git-conflict.nvim doesn't detect if not in merge state"
+- [x] **Detect conflicts outside Git merge state** — `detect.anywhere` config option (default `true`) works on any file with conflict markers, not just active merges
 
 ---
 
@@ -31,22 +40,12 @@ Both reviewers agree: the plugin is a solid re-implementation but lacks a **diff
 
 **Goal:** Upgrade from "dumb accept" to "intelligent merge".
 
-- **Trivial conflict auto-resolve** — detect whitespace-only, trailing comma, formatter diffs and resolve silently or with `<leader>cx`
-- **Live preview floating window** — show merged result before committing to "Accept Both"
-- **Pattern-aware merge hints** — detect import blocks, JSON keys, array merges and suggest combined result
-
----
-
-## Phase 4 — AI Power-Up (v0.5)
-
-**Goal:** Make AI the plugin's signature feature.
-
-- **Context-aware AI suggestions** — send surrounding function scope, not just the conflict block
-- **Post-AI syntax validation** — use Tree-sitter to verify the AI result before showing it
-- **Multi-provider support** — abstract AI interface to support `CopilotChat.nvim`, `CodeCompanion.nvim`, `Ollama` (local LLMs), not just Avante
+- [ ] **Trivial conflict auto-resolve** — detect whitespace-only, trailing comma, formatter diffs and resolve silently or with `<leader>cx`
+- [ ] **Live preview floating window** — show merged result before committing to "Accept Both"
+- [ ] **Pattern-aware merge hints** — detect import blocks, JSON keys, array merges and suggest combined result
 
 ---
 
 ## Priority Pick
 
-Both reviewers independently ranked **"Works outside Git"** as the highest-impact, lowest-competition niche. Phase 2 is the clearest path to becoming a **must-have** over a **nice-to-have**.
+Both reviewers independently ranked **"Works outside Git"** as the highest-impact, lowest-competition niche — already shipped (Phase 2). Remaining focus: close out Phase 0 test coverage, then Phase 3.
