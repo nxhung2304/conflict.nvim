@@ -160,12 +160,6 @@ M.detect_and_highlight = function()
 			else
 				vim.b[bufnr]._conflict_blame_was_on = false
 			end
-			-- Also try to disable via config
-			local ok, config = pcall(require, "gitsigns.config")
-			if ok and config.config then
-				vim.b[bufnr]._conflict_gitsigns_config = vim.b[bufnr]._conflict_gitsigns_config or {}
-				vim.b[bufnr]._conflict_gitsigns_config.blame_line = false
-			end
 		end)
 
 		-- Emit ConflictDetected event
