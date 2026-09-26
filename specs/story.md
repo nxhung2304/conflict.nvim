@@ -17,6 +17,20 @@ Both reviewers agree: the plugin is a solid re-implementation but lacks a **diff
 
 ---
 
+## Phase 0.5 — Polish (v0.1.x)
+
+**Goal:** Quality-of-life fixes before adding new features. Source: `specs/feedback/chatgpt.md` P1 items.
+
+- [x] ~~README workflow section~~ — done
+- [x] ~~Clarify ours/theirs/current/incoming~~ — done
+- [ ] **Colorscheme integration** — `colors` config currently takes hard-coded hex (`config.lua`), contradicting the "adapts to colorscheme" claim; support semantic highlight group names (e.g. `"DiffAdd"`) or a function returning a color
+- [x] ~~Project scan performance~~ — already uses `git grep` in `list.lua`, not a full-repo Lua scan
+- [ ] **API documentation** — document public Lua API (`require("conflict")` functions) beyond keymaps/commands
+- [ ] **Version/tag/release** — cut a tagged release so Lazy.nvim users can pin a version
+- [ ] **Health check** — add `:checkhealth conflict` (verify git available, optional deps present, config valid)
+
+---
+
 ## Phase 1 — UX Foundation (v0.2)
 
 **Goal:** Close the gap with existing plugins, stop losing users on basics.
