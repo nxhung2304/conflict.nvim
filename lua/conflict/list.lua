@@ -33,6 +33,27 @@ local function count_conflicts_in_file(filepath)
 	return count
 end
 
+-- git commands below return paths relative to the git root, not necessarily
+-- Neovim's cwd, so resolve them to absolute paths before use.
+local function get_git_toplevel()
+	local result = vim.fn.system("git rev-parse --show-toplevel 2>/dev/null")
+	if vim.v.shell_error ~= 0 then
+		return nil
+	end
+	return vim.trim(result)
+end
+
+local function resolve_git_relative_paths(files)
+	local git_root = get_git_toplevel()
+	if not git_root then
+		return files
+	end
+	for i, filepath in ipairs(files) do
+		files[i] = git_root .. "/" .. filepath
+	end
+	return files
+end
+
 -- Get conflict files from git status (only unmerged files)
 local function get_git_conflict_files()
 	local result = vim.fn.system("git diff --name-only --diff-filter=U 2>/dev/null")
@@ -43,7 +64,7 @@ local function get_git_conflict_files()
 	for filepath in result:gmatch("[^\n]+") do
 		table.insert(files, filepath)
 	end
-	return files
+	return resolve_git_relative_paths(files)
 end
 
 -- When detect.anywhere = true, use git grep to find ALL tracked files
@@ -57,7 +78,7 @@ local function scan_git_tracked_files()
 	for filepath in result:gmatch("[^\n]+") do
 		table.insert(files, filepath)
 	end
-	return files
+	return resolve_git_relative_paths(files)
 end
 
 -- Build list of all conflicts in the project
