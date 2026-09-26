@@ -1,0 +1,51 @@
+local eq = assert.are.same
+
+local function reset_modules()
+	for name, _ in pairs(package.loaded) do
+		if name:match("^conflict") then
+			package.loaded[name] = nil
+		end
+	end
+end
+
+describe("conflict.setup()", function()
+	before_each(function()
+		reset_modules()
+		pcall(vim.keymap.del, "n", "<leader>ca")
+		pcall(vim.api.nvim_del_user_command, "Conflict")
+	end)
+
+	it("does not error when called more than once", function()
+		local conflict = require("conflict")
+		assert.has_no.errors(function()
+			conflict.setup()
+			conflict.setup()
+			conflict.setup()
+		end)
+	end)
+
+	it("keeps the augroup, keymaps and user command registered after repeat calls", function()
+		local conflict = require("conflict")
+		conflict.setup()
+		conflict.setup()
+
+		assert.has_no.errors(function()
+			vim.api.nvim_get_autocmds({ group = "ConflictAuto" })
+		end)
+
+		assert.are_not.same("", vim.fn.maparg("<leader>ca", "n"))
+
+		eq(2, vim.fn.exists(":Conflict"))
+	end)
+
+	it("re-applies options passed on a later call instead of ignoring them", function()
+		local conflict = require("conflict")
+		local config = require("conflict.config")
+
+		conflict.setup({ keymaps = { leader = "<leader>c" } })
+		conflict.setup({ keymaps = { leader = "<leader>m" } })
+
+		eq("<leader>m", config.options.keymaps.leader)
+		assert.are_not.same("", vim.fn.maparg("<leader>mca", "n"))
+	end)
+end)
