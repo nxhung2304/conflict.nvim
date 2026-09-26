@@ -13,7 +13,7 @@ Both reviewers agree: the plugin is a solid re-implementation but lacks a **diff
 - [x] **diff3 parser correctness** — `detect_conflicts()` distinguishes `|||||||` base section from `<<<<<<<`/`=======`/`>>>>>>>` (`detect.lua` captures `conflict.base` and renders a separate "Base" highlight)
 - [x] **Multi-buffer state isolation** — conflict/LSP-suppression state is stored per-buffer via `vim.b[bufnr]` (`snapshot_buffer_state`/`restore_buffer_state`), not global
 - [x] **LSP/TreeSitter lifecycle correctness** — diagnostics and TreeSitter are snapshotted and restored per buffer (`restore_buffer_state` in `detect.lua`)
-- [ ] **Edge-case test coverage** — conflict at EOF/first line, empty ours/theirs/both, nested/adjacent conflicts, CRLF, Unicode, buffer unload/rename, resolve last vs. one-of-many (only `init_spec.lua` and `list_spec.lua` exist today)
+- [x] **Edge-case test coverage** — conflict at EOF/first line, empty ours/theirs/both, nested/adjacent conflicts, CRLF, Unicode, buffer unload/rename, resolve last vs. one-of-many (only `init_spec.lua` and `list_spec.lua` exist today)
 
 ---
 

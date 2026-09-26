@@ -49,3 +49,44 @@ describe("conflict.setup()", function()
 		assert.are_not.same("", vim.fn.maparg("<leader>mca", "n"))
 	end)
 end)
+
+describe("conflict.get_conflict_count() buffer lifecycle edge cases", function()
+	before_each(function()
+		reset_modules()
+	end)
+
+	it("counts conflicts correctly after the buffer has been renamed", function()
+		local conflict = require("conflict")
+
+		local buf = vim.api.nvim_create_buf(false, true)
+		vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
+			"<<<<<<< HEAD",
+			"ours",
+			"=======",
+			"theirs",
+			">>>>>>> branch",
+		})
+
+		vim.api.nvim_buf_set_name(buf, vim.fn.tempname() .. "_renamed.txt")
+
+		eq(1, conflict.get_conflict_count(buf))
+	end)
+
+	it("does not silently report a conflict count for a wiped-out buffer", function()
+		local conflict = require("conflict")
+
+		local buf = vim.api.nvim_create_buf(false, true)
+		vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
+			"<<<<<<< HEAD",
+			"ours",
+			"=======",
+			"theirs",
+			">>>>>>> branch",
+		})
+
+		vim.api.nvim_buf_delete(buf, { force = true })
+
+		local ok = pcall(conflict.get_conflict_count, buf)
+		eq(false, ok)
+	end)
+end)
