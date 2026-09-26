@@ -1,7 +1,5 @@
 local M = {}
 
-local _setup_done = false
-
 -- Detect conflicts in a specific buffer (used by statusline API)
 local function detect_conflicts_in_buffer(bufnr)
 	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
@@ -34,13 +32,6 @@ local function detect_conflicts_in_buffer(bufnr)
 end
 
 M.setup = function(opts)
-  -- Guard against calling setup() more than once.
-  if _setup_done then
-    vim.notify("conflict.nvim: setup() called more than once", vim.log.levels.WARN)
-    return
-  end
-  _setup_done = true
-
   local config  = require("conflict.config")
   local detect  = require("conflict.detect")
   local resolve = require("conflict.resolve")

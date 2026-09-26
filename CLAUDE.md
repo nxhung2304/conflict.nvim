@@ -11,11 +11,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 There is no build step. This is a pure Lua Neovim plugin. Development workflow:
 
 - **Manual testing**: Load the plugin in Neovim using Lazy.nvim pointing to the local path
-- **No automated tests exist**: The project has no test runner or test files configured
+- **Automated tests**: `tests/` holds plenary.nvim busted-style specs (requires `nvim-lua/plenary.nvim` on the runtimepath)
 
 To test locally with Lazy.nvim, point the plugin spec to the local directory:
 ```lua
 { dir = "/path/to/conflict.nvim", config = function() require("conflict").setup() end }
+```
+
+To run the automated tests:
+```sh
+nvim --headless -u NONE \
+  -c "set rtp+=." \
+  -c "set rtp+=/path/to/plenary.nvim" \
+  -c "runtime plugin/plenary.vim" \
+  -c "PlenaryBustedDirectory tests/ { minimal_init = 'NONE' }"
 ```
 
 ## Architecture
