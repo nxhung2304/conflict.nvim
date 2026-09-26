@@ -1,11 +1,11 @@
 # conflict.nvim
 
-Fast, smart Git conflict resolver for Neovim
+Resolve merge conflicts directly inside Neovim, with inline actions, project-wide detection, and optional 2-way/3-way comparison. Works on Git merge conflicts as well as manually pasted conflict markers.
 
 ## Features
 
 - **Color-blended highlighting** — adapts to your colorscheme
-- **Works everywhere** — git merge, AI-generated, manually pasted markers
+- **Works everywhere** — git merge, manually pasted markers
 - **Project listing** — `<leader>cl` lists all conflicts across project
 - **User events** — `ConflictDetected`, `ConflictResolved` for automation
 - **2-way/3-way diffs** — with diffview.nvim integration
@@ -40,6 +40,24 @@ Fast, smart Git conflict resolver for Neovim
 ```
 
 Optional: `diffview.nvim`
+
+## Workflow
+
+```text
+1. Open a conflicted file
+2. Jump between conflicts with <leader>cn / <leader>cp
+3. Inspect with <leader>c2 (2-way) or <leader>c3 (3-way) if unsure
+4. Resolve with <leader>ca / ci / cb / c0
+5. Run git diff / tests to confirm correctness
+```
+
+`Current`/`Incoming`/`Base` map to standard Git merge terms:
+
+- **Current** = ours / current branch
+- **Incoming** = theirs / branch being merged
+- **Base** = common ancestor (diff3 conflicts only)
+
+Accepting a section resolves the *conflict marker*, not necessarily the *logic* — always review the result before committing.
 
 ## Config
 
